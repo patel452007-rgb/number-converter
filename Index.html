@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Number System Converter</title>
+<style>
+  :root{
+    --bg:#0f1220;
+    --card:#161a2b;
+    --ink:#e8ebff;
+    --muted:#9aa3c7;
+    --accent:#7c5cff;
+    --accent-2:#34d399;
+    --danger:#ff6b6b;
+    --ring: 0 0 0 3px rgba(124,92,255,.25);
+    --radius: 16px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+    color:var(--ink);
+    background: radial-gradient(1200px 800px at 80% -10%, #1b1f35 0%, var(--bg) 60%);
+    letter-spacing:.2px;
+  }
+  .container{
+    max-width:960px; margin:40px auto; padding:0 16px;
+  }
+  .header{
+    display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px;
+  }
+  h1{font-size:28px; margin:0}
+  .sub{color:var(--muted); font-size:14px}
+  .card{
+    background:linear-gradient(180deg, #171b2e 0%, #121527 100%);
+    border:1px solid #222846;
+    border-radius: var(--radius);
+    box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
+    padding:20px;
+  }
+  .grid{display:grid; gap:14px}
+  @media(min-width:720px){ .grid-2{grid-template-columns: 1fr 1fr} }
+  label{display:block; font-size:13px; color:var(--muted); margin-bottom:6px}
+  input, select, textarea{
+    width:100%; padding:12px 14px; border-radius:12px; border:1px solid #273055;
+    background:#0f1429; color:var(--ink); outline:none; transition:.15s;
+    font-size:15px;
+  }
+  input:focus, select:focus, textarea:focus{ box-shadow: var(--ring); border-color:#3d4aa8 }
+  .row{display:flex; gap:12px; align-items:center}
+  .btn{
+    cursor:pointer; border:none; padding:12px 16px; border-radius:12px; font-weight:600; font-size:15px;
+    background: linear-gradient(135deg, var(--accent) 0%, #5a3cff 100%); color:white;
+    box-shadow: 0 8px 20px rgba(124,92,255,.35);
+    transition: transform .06s ease, box-shadow .15s ease;
+  }
+  .btn:active{ transform: translateY(1px); box-shadow: 0 6px 14px rgba(124,92,255,.28) }
+  .btn.secondary{ background:#1b2245; border:1px solid #2b3770; box-shadow:none; color:#cfd5ff }
+  .chips{display:flex; flex-wrap:wrap; gap:8px}
+  .chip{
+    padding:8px 10px; border-radius:999px; font-size:13px; background:#0f1429; border:1px solid #273055; color:#cfd5ff;
+  }
+  .output{
+    background:#0b1024; border:1px dashed #30407a; border-radius:14px; padding:14px; word-break:break-all; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size:16px;
+  }
+  .muted{ color:var(--muted) }
+  .ok{ color: var(--accent-2) }
+  .err{ color: var(--danger) }
+  .footer{margin-top:28px; font-size:12px; color:var(--muted); text-align:center}
+  .swap{
+    border-radius:10px; padding:10px 12px; border:1px solid #2b3770; background:#161c3a; cursor:pointer; color:#cfd5ff; font-weight:600
+  }
+  .toggle{
+    display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; font-size:14px; color:#cfd5ff
+  }
+  .note{font-size:12px; color:#91a0d9}
+  .steps{white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; background:#0d1330; border:1px solid #273055; border-radius:12px; padding:12px; max-height:260px; overflow:auto}
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>Number System Converter</h1>
+        <div class="sub">Convert integers between bases <strong>2–36</strong>. Includes a learning mode with step-by-step explanation.</div>
+      </div>
+    </div>
+
+    <div class="card grid">
+      <div class="grid grid-2">
+        <div>
+          <label for="inputVal">Input Number</label>
+          <input id="inputVal" placeholder="e.g. 1101, 7B, 2025" value="1101" />
+        </div>
+        <div class="row" style="gap:10px">
+          <div style="flex:1">
+            <label for="fromBase">From Base</label>
+            <select id="fromBase"></select>
+          </div>
+          <div class="row" style="margin-top:22px">
+            <button id="swap" class="swap" title="Swap bases">⇄ Swap</button>
+          </div>
+          <div style="flex:1">
+            <label for="toBase">To Base</label>
+            <select id="toBase"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="row" style="justify-content:space-between">
+        <div class="chips" id="quickChips"></div>
+        <div class="row">
+          <label class="toggle"><input type="checkbox" id="showSteps" /> Show steps</label>
+          <button class="btn" id="convertBtn">Convert</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>Result</label>
+          <div id="result" class="output">–</div>
+          <div class="note">Tip: The app auto-validates your input for the chosen base. Letters are case-insensitive.</div>
+        </div>
+
+        <div id="stepsWrap" style="display:none">
+          <label>Step-by-Step</label>
+          <div id="steps" class="steps">–</div>
+        </div>
+
+        <div>
+          <label>Common Bases</label>
+          <div class="chips" id="commonRow">
+            <span class="chip" data-common="2">Bin (2): <span id="c2" class="muted">–</span></span>
+            <span class="chip" data-common="8">Oct (8): <span id="c8" class="muted">–</span></span>
+            <span class="chip" data-common="10">Dec (10): <span id="c10" class="muted">–</span></span>
+            <span class="chip" data-common="16">Hex (16): <span id="c16" class="muted">–</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Built with HTML + CSS + a sprinkle of JS. Supports large integers via <code>BigInt</code>.
+    </div>
+  </div>
+
+<script>
+(function(){
+  const A = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+  const el = (id)=>document.getElementById(id);
+
+  // Populate base selects (2..36)
+  function populateBases(){
+    for(let b=2;b<=36;b++){
+      const o1=document.createElement('option');
+      const o2=document.createElement('option');
+      o1.value=o2.value=b;
+      o1.textContent=o2.textContent=`Base ${b}`;
+      el('fromBase').appendChild(o1);
+      el('toBase').appendChild(o2);
+    }
+    el('fromBase').value = 2;
+    el('toBase').value = 10;
+  }
+
+  // Quick target chips (2,8,10,16)
+  function renderQuickChips(){
+    const row = el('quickChips');
+    [2,8,10,16,3,5,20,36].forEach(b=>{
+      const s = document.createElement('button');
+      s.className = 'chip';
+      s.textContent = `To ${b}`;
+      s.addEventListener('click', ()=>{
+        el('toBase').value = b;
+        convert();
+      });
+      row.appendChild(s);
+    });
+  }
+
+  function sanitize(s){ return s.trim().toUpperCase().replace(/\s+/g,''); }
+
+  function isValidForBase(str, base){
+    const allowed = A.slice(0, base);
+    return /^[0-9A-Z]+$/.test(str) && [...str].every(ch => allowed.includes(ch));
+  }
+
+  function toBigInt(str, base){
+    // Parse arbitrary-base string to BigInt (non-negative integers)
+    let n = 0n;
+    const b = BigInt(base);
+    for(const ch of str){
+      const v = BigInt(A.indexOf(ch));
+      n = n * b + v;
+    }
+    return n;
+  }
+
+  function fromBigInt(n, base){
+    if(n === 0n) return "0";
+    const b = BigInt(base);
+    let out = "";
+    let q = n;
+    while(q > 0n){
+      const r = q % b;
+      out = A[Number(r)] + out;
+      q = q / b;
+    }
+    return out;
+  }
+
+  function explainParse(str, base){
+    // Positional expansion explanation
+    const digits = [...str].map(ch => A.indexOf(ch));
+    const lines = [];
+    lines.push(`Parsing "${str}" (base ${base}) to decimal using positional weights:`);
+    let sumParts = [];
+    for(let i=0;i<digits.length;i++){
+      const pos = digits.length - 1 - i;
+      const d = digits[i];
+      sumParts.push(`${d}×${base}^${pos}`);
+    }
+    lines.push("Value = " + sumParts.join(" + "));
+    let acc = 0n;
+    const b = BigInt(base);
+    for(let i=0;i<digits.length;i++){
+      const d = BigInt(digits[i]);
+      acc = acc * b + d;
+      lines.push(`Step ${i+1}: acc = acc×${base} + ${digits[i]} → ${acc}`);
+    }
+    lines.push(`Decimal result = ${acc}`);
+    return {text: lines.join("\n"), decimal: acc};
+  }
+
+  function explainDivision(n, base){
+    // Repeated division remainder explanation
+    const b = BigInt(base);
+    let q = n;
+    const steps = [];
+    while(q > 0n){
+      const r = q % b;
+      const line = `q=${q} ÷ ${base} → q=${q / b}, r=${r} (${A[Number(r)]})`;
+      steps.push(line);
+      q = q / b;
+    }
+    steps.push("Read remainders (last to first) to get the final representation.");
+    return steps.join("\n");
+  }
+
+  function updateCommonBases(nBig){
+    const bases = [2,8,10,16];
+    for(const b of bases){
+      const id = 'c'+b;
+      const val = (b===10) ? nBig.toString() : fromBigInt(nBig, b);
+      el(id).textContent = val;
+      el(id).className = "ok";
+    }
+  }
+
+  function setResult(text, ok=true){
+    const r = el('result');
+    r.textContent = text;
+    r.className = 'output ' + (ok ? '': 'err');
+  }
+
+  function convert(){
+    const raw = sanitize(el('inputVal').value);
+    const fromB = parseInt(el('fromBase').value,10);
+    const toB = parseInt(el('toBase').value,10);
+    el('stepsWrap').style.display = el('showSteps').checked ? 'block' : 'none';
+
+    if(!raw){
+      setResult("Please enter a number.", false);
+      el('steps').textContent = "–";
+      return;
+    }
+    if(!isValidForBase(raw, fromB)){
+      setResult(`"${raw}" is not valid for base ${fromB}.`, false);
+      el('steps').textContent = "Tip: Allowed digits for base "+fromB+" are: " + A.slice(0,fromB).split('').join(' ');
+      updateCommonBases(0n);
+      return;
+    }
+    try{
+      // parse and convert
+      const parseInfo = explainParse(raw, fromB);
+      const nBig = parseInfo.decimal;
+      const out = (toB===10) ? nBig.toString() : fromBigInt(nBig, toB);
+      setResult(out, true);
+      updateCommonBases(nBig);
+      if(el('showSteps').checked){
+        const divSteps = explainDivision(nBig, toB);
+        el('steps').textContent = parseInfo.text + "\n\nConverting decimal → base "+toB+" by repeated division:\n" + divSteps + `\n\nFinal (${toB}): ${out}`;
+      }else{
+        el('steps').textContent = "–";
+      }
+    }catch(err){
+      setResult("Conversion error. Try a smaller value.", false);
+      el('steps').textContent = String(err);
+    }
+  }
+
+  // Swap bases
+  el('swap')?.addEventListener('click', ()=>{
+    const a = el('fromBase').value;
+    const b = el('toBase').value;
+    el('fromBase').value = b;
+    el('toBase').value = a;
+    convert();
+  });
+
+  // Live convert on changes
+  ['inputVal','fromBase','toBase','showSteps'].forEach(id=>{
+    document.addEventListener('input', (e)=>{
+      if(e.target && e.target.id === id) convert();
+    }, true);
+  });
+
+  // Initialize
+  populateBases();
+  renderQuickChips();
+  convert();
+})();
+</script>
+</body>
+</html>
